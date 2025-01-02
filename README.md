@@ -1,6 +1,8 @@
 # cpp-tree-sitter
 
-... is a simple C++ and CMake wrapper around tree-sitter. This project provides
+Fork of [cpp-tree-sitter](https://github.com/nsumner/cpp-tree-sitter/) with query support
+
+cpp-tree-sitter is a simple C++ and CMake wrapper around tree-sitter. This project provides
 CMake definitions and a C++ wrapper that help with
 * managing tree-sitter and tree-sitter grammars as dependencies
 * accessing basic tree-sitter APIs for parse tree inspection
