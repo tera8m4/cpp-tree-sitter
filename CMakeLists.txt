@@ -4,13 +4,25 @@ project(cpp-tree-sitter)
 set(PACKAGE_NAME cpp-tree-sitter)
 set(PACKAGE_VERSION 0.0.3)
 set(PACKAGE_STRING "${PACKAGE_NAME} ${PACKAGE_VERSION}")
-set(PACKAGE_BUGREPORT "wsumner@sfu.ca")
+
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+if(PROJECT_SOURCE_DIR STREQUAL PROJECT_BINARY_DIR)
+  message(
+    FATAL_ERROR
+      "In-source builds not allowed. Please make a new directory (called a build directory) and run CMake from there."
+  )
+endif()
 
 add_compile_options(
   "$<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:-Wall;-Wextra;-Wconversion>"
 )
 
 include(cmake/CPM.cmake)
+
+set(CPP_TREESITTER_ENABLE_EXAMPLES OFF CACHE BOOL
+  "Enable example")
 
 # We want to automatically download and provide tree-sitter to users of
 # the package, so pull it in and retrofit cmake dependencies on top of it.
@@ -79,13 +91,27 @@ function(add_grammar_from_repo NAME REPO VERSION)
 endfunction(add_grammar_from_repo)
 
 
-add_library(cpp-tree-sitter INTERFACE)
-target_include_directories(cpp-tree-sitter
-  INTERFACE
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-    $<INSTALL_INTERFACE:include>
+# ---- Add source files ----
+
+# Note: globbing sources is considered bad practice as CMake's generators may not detect new files
+# automatically. Keep that in mind when changing files, or explicitly mention them here.
+file(GLOB_RECURSE headers CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/include/*.h")
+file(GLOB_RECURSE sources CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/source/*.cpp")
+
+# ---- Create library ----
+
+# Note: for header-only libraries change all PUBLIC flags to INTERFACE and create an interface
+# target: add_library(${PROJECT_NAME} INTERFACE)
+add_library(${PROJECT_NAME} ${headers} ${sources})
+
+target_include_directories(
+  ${PROJECT_NAME} PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
+                         $<INSTALL_INTERFACE:include/${PROJECT_NAME}-${PROJECT_VERSION}>
 )
-target_link_libraries(cpp-tree-sitter
-  INTERFACE
-    tree-sitter
-)
+
+target_link_libraries(cpp-tree-sitter PRIVATE tree-sitter)
+
+if (CPP_TREESITTER_ENABLE_EXAMPLES)
+  message(INFO "examples enabled")
+  add_subdirectory(examples)
+endif()
