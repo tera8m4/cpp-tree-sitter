@@ -23,6 +23,8 @@ include(cmake/CPM.cmake)
 
 set(CPP_TREESITTER_ENABLE_EXAMPLES OFF CACHE BOOL
   "Enable example")
+set(CPP_TREESITTER_ENABLE_TEST OFF CACHE BOOL
+  "Enable tests")
 
 # We want to automatically download and provide tree-sitter to users of
 # the package, so pull it in and retrofit cmake dependencies on top of it.
@@ -112,6 +114,8 @@ target_include_directories(
 target_link_libraries(cpp-tree-sitter PRIVATE tree-sitter)
 
 if (CPP_TREESITTER_ENABLE_EXAMPLES)
-  message(INFO "examples enabled")
   add_subdirectory(examples)
+endif()
+if (CPP_TREESITTER_ENABLE_TEST)
+  add_subdirectory(test)
 endif()
