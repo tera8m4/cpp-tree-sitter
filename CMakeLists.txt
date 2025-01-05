@@ -7,6 +7,7 @@ set(PACKAGE_STRING "${PACKAGE_NAME} ${PACKAGE_VERSION}")
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 if(PROJECT_SOURCE_DIR STREQUAL PROJECT_BINARY_DIR)
   message(
@@ -52,8 +53,16 @@ if (tree-sitter_ADDED)
     PRIVATE
       "$<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:-Wno-conversion>"
   )
-endif()
 
+  # Install tree-sitter
+  install(TARGETS tree-sitter
+          EXPORT ${PROJECT_NAME}Targets
+          RUNTIME DESTINATION bin
+          LIBRARY DESTINATION lib
+          ARCHIVE DESTINATION lib)
+  install(DIRECTORY ${tree-sitter_SOURCE_DIR}/lib/include/
+          DESTINATION include)
+endif()
 
 function(add_grammar_from_repo NAME REPO VERSION)
   CPMAddPackage(
@@ -74,8 +83,6 @@ function(add_grammar_from_repo NAME REPO VERSION)
     )
     target_include_directories(${NAME}
       PRIVATE
-        # parser.h is stored within the src directory, so we need to include
-        # src in the search paths
         $<BUILD_INTERFACE:${${NAME}_SOURCE_DIR}/src>
       PUBLIC
         $<INSTALL_INTERFACE:include>
@@ -89,21 +96,26 @@ function(add_grammar_from_repo NAME REPO VERSION)
       PRIVATE
         "$<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:-Wno-unused-but-set-variable>"
     )
+
+    # Install grammar library (only if not already installed)
+    if (NOT TARGET ${NAME}-installed)
+      install(TARGETS ${NAME}
+              EXPORT ${PROJECT_NAME}Targets
+              RUNTIME DESTINATION bin
+              LIBRARY DESTINATION lib
+              ARCHIVE DESTINATION lib)
+      set(${NAME}-installed TRUE CACHE INTERNAL "")
+    endif()
   endif()
 endfunction(add_grammar_from_repo)
 
-
 # ---- Add source files ----
 
-# Note: globbing sources is considered bad practice as CMake's generators may not detect new files
-# automatically. Keep that in mind when changing files, or explicitly mention them here.
 file(GLOB_RECURSE headers CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/include/*.h")
 file(GLOB_RECURSE sources CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/source/*.cpp")
 
 # ---- Create library ----
 
-# Note: for header-only libraries change all PUBLIC flags to INTERFACE and create an interface
-# target: add_library(${PROJECT_NAME} INTERFACE)
 add_library(${PROJECT_NAME} ${headers} ${sources})
 
 target_include_directories(
@@ -112,6 +124,22 @@ target_include_directories(
 )
 
 target_link_libraries(cpp-tree-sitter PRIVATE tree-sitter)
+
+# Install cpp-tree-sitter
+install(TARGETS ${PROJECT_NAME}
+        EXPORT ${PROJECT_NAME}Targets
+        RUNTIME DESTINATION bin
+        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib)
+
+# Install headers
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/
+        DESTINATION include/${PROJECT_NAME}-${PROJECT_VERSION})
+
+# Export targets
+install(EXPORT ${PROJECT_NAME}Targets
+        FILE ${PROJECT_NAME}Targets.cmake
+        DESTINATION lib/cmake/${PROJECT_NAME})
 
 if (CPP_TREESITTER_ENABLE_EXAMPLES)
   add_subdirectory(examples)
