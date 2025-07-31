@@ -64,6 +64,46 @@ if (tree-sitter_ADDED)
           DESTINATION include)
 endif()
 
+function(add_local_grammar NAME LOCAL_PATH)
+  if(NOT EXISTS "${LOCAL_PATH}")
+    message(FATAL_ERROR "Local grammar path does not exist: ${LOCAL_PATH}")
+  endif()
+
+  add_library(${NAME})
+
+  file(GLOB maybe_scanner "${LOCAL_PATH}/src/scanner.c")
+  target_sources(${NAME}
+    PRIVATE
+      "${LOCAL_PATH}/src/parser.c"
+      ${maybe_scanner}
+  )
+  target_include_directories(${NAME}
+    PRIVATE
+      $<BUILD_INTERFACE:${LOCAL_PATH}/src>
+    PUBLIC
+      $<INSTALL_INTERFACE:include>
+  )
+
+  target_link_libraries(${NAME}
+    INTERFACE
+      tree-sitter
+  )
+  target_compile_options(${NAME}
+    PRIVATE
+      "$<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:-Wno-unused-but-set-variable>"
+  )
+
+  # Install grammar library (only if not already installed)
+  if (NOT TARGET ${NAME}-installed)
+    install(TARGETS ${NAME}
+            EXPORT ${PROJECT_NAME}Targets
+            RUNTIME DESTINATION bin
+            LIBRARY DESTINATION lib
+            ARCHIVE DESTINATION lib)
+    set(${NAME}-installed TRUE CACHE INTERNAL "")
+  endif()
+endfunction(add_local_grammar)
+
 function(add_grammar_from_repo NAME REPO VERSION)
   CPMAddPackage(
     NAME ${NAME}
