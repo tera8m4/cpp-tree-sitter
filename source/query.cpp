@@ -1,6 +1,6 @@
-#include "language.h"
-#include "node.h"
-#include "query.h"
+#include "cpp-tree-sitter/language.h"
+#include "cpp-tree-sitter/node.h"
+#include "cpp-tree-sitter/query.h"
 
 namespace ts {
 

@@ -1,8 +1,8 @@
 #include <catch2/catch_test_macros.hpp>
 
-#include "language.h"
-#include "parser.h"
-#include "query.h"
+#include "cpp-tree-sitter/language.h"
+#include "cpp-tree-sitter/parser.h"
+#include "cpp-tree-sitter/query.h"
 
 using namespace ts;
 
